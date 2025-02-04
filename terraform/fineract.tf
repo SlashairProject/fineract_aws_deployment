@@ -28,7 +28,7 @@ resource "time_sleep" "waitrolecreate" {
 resource "aws_apprunner_service" "fineract" {
   depends_on = [
     time_sleep.waitrolecreate,
-    module.aurora_cluster
+    resource.aws_db_instance.fineract_postgres
   ]
   service_name = "fineract_${var.env}"
 
@@ -55,11 +55,11 @@ resource "aws_apprunner_service" "fineract" {
           FINERACT_SERVER_SSL_ENABLED=false
           # NOTE: env vars prefixed "FINERACT_HIKARI_*" are used to configure the database connection pool
           FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME="org.postgresql.Driver"
-          FINERACT_HIKARI_JDBC_URL="jdbc:postgresql://${module.aurora_cluster.cluster_endpoint}:5432/fineract_tenants"
+          FINERACT_HIKARI_JDBC_URL="jdbc:postgresql://${aws_db_instance.fineract_postgres.endpoint}:5432/fineract_tenants"
           FINERACT_HIKARI_USERNAME="postgres"
           FINERACT_HIKARI_PASSWORD=data.aws_ssm_parameter.fineract_database_password.value
           # NOTE: env vars prefixed "FINERACT_DEFAULT_TENANTDB_*" are used to create the default tenant database
-          FINERACT_DEFAULT_TENANTDB_HOSTNAME="${module.aurora_cluster.cluster_endpoint}"
+          FINERACT_DEFAULT_TENANTDB_HOSTNAME="${aws_db_instance.fineract_postgres.endpoint}"
           FINERACT_DEFAULT_TENANTDB_PORT=5432
           FINERACT_DEFAULT_TENANTDB_UID="postgres"
           FINERACT_DEFAULT_TENANTDB_PWD=data.aws_ssm_parameter.fineract_database_password.value
@@ -72,7 +72,7 @@ resource "aws_apprunner_service" "fineract" {
         }
       }
       image_identifier      = "apache/fineract:latest"
-      image_repository_type = "dockerhub"
+      image_repository_type = "DOCKER_HUB"
     }
     auto_deployments_enabled = false
   }
@@ -84,26 +84,26 @@ resource "aws_apprunner_service" "fineract" {
 }
 
 
-resource "aws_apprunner_service" "fineract_community_ui" {
-  service_name = "fineract_community_ui_${var.env}"
+# resource "aws_apprunner_service" "fineract_community_ui" {
+#   service_name = "fineract_community_ui_${var.env}"
 
-  source_configuration {
-    authentication_configuration {
-      access_role_arn = "${aws_iam_role.fineract_roles.arn}"
-    }
+#   source_configuration {
+#     authentication_configuration {
+#       access_role_arn = "${aws_iam_role.fineract_roles.arn}"
+#     }
 
-    image_repository {
-      image_configuration {
-        port = "80"
-      }
-      image_identifier      = "openmf/community-app:latest"
-      image_repository_type = "ECR_PUBLIC"
-    }
-    auto_deployments_enabled = false
-  }
+#     image_repository {
+#       image_configuration {
+#         port = "80"
+#       }
+#       image_identifier      = "openmf/community-app:latest"
+#       image_repository_type = "ECR_PUBLIC"
+#     }
+#     auto_deployments_enabled = false
+#   }
 
-  tags = {
-    Name = "fineract-community-ui-apprunner-service"
-    Environment = var.env
-  }
-}
+#   tags = {
+#     Name = "fineract-community-ui-apprunner-service"
+#     Environment = var.env
+#   }
+# }

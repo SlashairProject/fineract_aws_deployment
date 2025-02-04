@@ -15,5 +15,7 @@
             ]
         }
     },
-    "postCreateCommand": "docker --version"
+    "mounts": [
+        "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind,consistency=cached"
+    ]
 }
