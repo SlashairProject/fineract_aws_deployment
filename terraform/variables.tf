@@ -5,5 +5,5 @@ variable "env" {
 
 variable "aws_profile" {
     type = string
-    default = "default"
+    default = "syndikiza_admin"
 }
